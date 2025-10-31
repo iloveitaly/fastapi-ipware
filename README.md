@@ -258,7 +258,7 @@ Contributions welcome! This is a thin wrapper around python-ipware, so most IP d
 
 ## License
 
-MIT
+[MIT License](LICENSE.md)
 
 ## Credits
 
