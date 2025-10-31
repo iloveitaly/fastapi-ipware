@@ -13,8 +13,6 @@ authors = [{ name = "Michael Bianco", email = "mike@mikebian.co" }]
 urls = { "Repository" = "https://github.com/iloveitaly/fastapi-ipware" }
 
 # additional packaging information: https://packaging.python.org/en/latest/specifications/core-metadata/#license
-[project.scripts]
-fastapi-ipware = "fastapi_ipware:main"
 
 [build-system]
 requires = ["uv_build>=0.8.11,<0.9.0"]
