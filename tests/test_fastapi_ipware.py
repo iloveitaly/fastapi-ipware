@@ -1,7 +1,6 @@
 import ipaddress
 from unittest.mock import MagicMock
 
-import pytest
 from starlette.datastructures import Headers
 
 from fastapi_ipware import FastAPIIpWare
@@ -28,9 +27,7 @@ class TestBasicFunctionality:
 
     def test_multiple_ips_leftmost(self):
         ipware = FastAPIIpWare(leftmost=True)
-        request = create_mock_request(
-            {"X-Forwarded-For": "8.8.8.8, 1.1.1.1, 9.9.9.9"}
-        )
+        request = create_mock_request({"X-Forwarded-For": "8.8.8.8, 1.1.1.1, 9.9.9.9"})
 
         ip, trusted = ipware.get_client_ip_from_request(request)
 
@@ -38,9 +35,7 @@ class TestBasicFunctionality:
 
     def test_multiple_ips_rightmost(self):
         ipware = FastAPIIpWare(leftmost=False)
-        request = create_mock_request(
-            {"X-Forwarded-For": "8.8.8.8, 1.1.1.1, 9.9.9.9"}
-        )
+        request = create_mock_request({"X-Forwarded-For": "8.8.8.8, 1.1.1.1, 9.9.9.9"})
 
         ip, trusted = ipware.get_client_ip_from_request(request)
 
@@ -124,9 +119,7 @@ class TestProxyCount:
     def test_proxy_count_one_non_strict(self):
         # At least 1 proxy expected
         ipware = FastAPIIpWare(proxy_count=1)
-        request = create_mock_request(
-            {"X-Forwarded-For": "8.8.8.8, 1.1.1.1"}
-        )
+        request = create_mock_request({"X-Forwarded-For": "8.8.8.8, 1.1.1.1"})
 
         ip, trusted = ipware.get_client_ip_from_request(request, strict=False)
 
@@ -136,9 +129,7 @@ class TestProxyCount:
     def test_proxy_count_one_strict_match(self):
         # Exactly 1 proxy expected
         ipware = FastAPIIpWare(proxy_count=1)
-        request = create_mock_request(
-            {"X-Forwarded-For": "8.8.8.8, 1.1.1.1"}
-        )
+        request = create_mock_request({"X-Forwarded-For": "8.8.8.8, 1.1.1.1"})
 
         ip, trusted = ipware.get_client_ip_from_request(request, strict=True)
 
@@ -148,9 +139,7 @@ class TestProxyCount:
     def test_proxy_count_strict_mismatch(self):
         # Exactly 1 proxy expected but 2 provided
         ipware = FastAPIIpWare(proxy_count=1)
-        request = create_mock_request(
-            {"X-Forwarded-For": "8.8.8.8, 1.1.1.1, 9.9.9.9"}
-        )
+        request = create_mock_request({"X-Forwarded-For": "8.8.8.8, 1.1.1.1, 9.9.9.9"})
 
         ip, trusted = ipware.get_client_ip_from_request(request, strict=True)
 
@@ -161,9 +150,7 @@ class TestProxyCount:
     def test_proxy_count_insufficient(self):
         # 2 proxies expected but only 1 provided
         ipware = FastAPIIpWare(proxy_count=2)
-        request = create_mock_request(
-            {"X-Forwarded-For": "8.8.8.8, 1.1.1.1"}
-        )
+        request = create_mock_request({"X-Forwarded-For": "8.8.8.8, 1.1.1.1"})
 
         ip, trusted = ipware.get_client_ip_from_request(request, strict=False)
 
@@ -176,9 +163,7 @@ class TestProxyList:
 
     def test_proxy_list_single_trusted(self):
         ipware = FastAPIIpWare(proxy_list=["1.1.1."])
-        request = create_mock_request(
-            {"X-Forwarded-For": "8.8.8.8, 1.1.1.1"}
-        )
+        request = create_mock_request({"X-Forwarded-For": "8.8.8.8, 1.1.1.1"})
 
         ip, trusted = ipware.get_client_ip_from_request(request)
 
@@ -187,9 +172,7 @@ class TestProxyList:
 
     def test_proxy_list_multiple_trusted(self):
         ipware = FastAPIIpWare(proxy_list=["1.1.1.", "9.9.9."])
-        request = create_mock_request(
-            {"X-Forwarded-For": "8.8.8.8, 1.1.1.1, 9.9.9.9"}
-        )
+        request = create_mock_request({"X-Forwarded-For": "8.8.8.8, 1.1.1.1, 9.9.9.9"})
 
         ip, trusted = ipware.get_client_ip_from_request(request)
 
@@ -210,9 +193,7 @@ class TestProxyList:
 
     def test_proxy_list_strict_match(self):
         ipware = FastAPIIpWare(proxy_list=["1.1.1."])
-        request = create_mock_request(
-            {"X-Forwarded-For": "8.8.8.8, 1.1.1.1"}
-        )
+        request = create_mock_request({"X-Forwarded-For": "8.8.8.8, 1.1.1.1"})
 
         ip, trusted = ipware.get_client_ip_from_request(request, strict=True)
 
@@ -221,9 +202,7 @@ class TestProxyList:
 
     def test_proxy_list_strict_extra_proxy(self):
         ipware = FastAPIIpWare(proxy_list=["1.1.1."])
-        request = create_mock_request(
-            {"X-Forwarded-For": "8.8.8.8, 9.9.9.9, 1.1.1.1"}
-        )
+        request = create_mock_request({"X-Forwarded-For": "8.8.8.8, 9.9.9.9, 1.1.1.1"})
 
         ip, trusted = ipware.get_client_ip_from_request(request, strict=True)
 
@@ -237,9 +216,7 @@ class TestProxyCountAndList:
 
     def test_combined_validation(self):
         ipware = FastAPIIpWare(proxy_count=1, proxy_list=["1.1.1."])
-        request = create_mock_request(
-            {"X-Forwarded-For": "8.8.8.8, 1.1.1.1"}
-        )
+        request = create_mock_request({"X-Forwarded-For": "8.8.8.8, 1.1.1.1"})
 
         ip, trusted = ipware.get_client_ip_from_request(request)
 
@@ -248,9 +225,7 @@ class TestProxyCountAndList:
 
     def test_combined_count_mismatch(self):
         ipware = FastAPIIpWare(proxy_count=1, proxy_list=["1.1.1."])
-        request = create_mock_request(
-            {"X-Forwarded-For": "8.8.8.8, 9.9.9.9, 1.1.1.1"}
-        )
+        request = create_mock_request({"X-Forwarded-For": "8.8.8.8, 9.9.9.9, 1.1.1.1"})
 
         ip, trusted = ipware.get_client_ip_from_request(request, strict=True)
 
@@ -295,9 +270,7 @@ class TestIPTypes:
         # ipware returns first valid IP based on precedence, then filters by type
         # It will check X-Real-IP first (private), skip it internally,
         # then check X-Forwarded-For (public) and return it
-        ipware = FastAPIIpWare(
-            precedence=("X-Real-IP", "X-Forwarded-For")
-        )
+        ipware = FastAPIIpWare(precedence=("X-Real-IP", "X-Forwarded-For"))
         request = create_mock_request(
             {"X-Real-IP": "192.168.1.1", "X-Forwarded-For": "8.8.8.8"}
         )
