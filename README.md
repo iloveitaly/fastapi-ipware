@@ -186,71 +186,7 @@ The default precedence order is optimized for modern cloud deployments. See the 
 
 ## Why fastapi-ipware?
 
-### The Problem
-
-`python-ipware` expects WSGI-style headers (e.g., `HTTP_X_FORWARDED_FOR`), but FastAPI/Starlette uses natural header names (e.g., `X-Forwarded-For`). This requires a manual conversion "hack":
-
-```python
-# The old way - manual conversion needed
-meta_dict = {}
-for name, value in request.headers.items():
-    meta_key = f"HTTP_{name.upper().replace('-', '_')}"
-    meta_dict[meta_key] = value
-
-ip, trusted = ipw.get_client_ip(meta=meta_dict)
-```
-
-### The Solution
-
-`fastapi-ipware` handles this conversion internally and efficiently:
-
-```python
-# The new way - clean and simple
-ipware = FastAPIIpWare()
-ip, trusted = ipware.get_client_ip_from_request(request)
-```
-
-Performance benefits:
-- Header format conversion happens **once at initialization**, not on every request
-- Request headers converted **once per request** (unavoidable)
-- Zero overhead during header lookup (O(1) dict operations)
-
-## API Reference
-
-### `FastAPIIpWare`
-
-```python
-FastAPIIpWare(
-    precedence: Optional[Tuple[str, ...]] = None,
-    leftmost: bool = True,
-    proxy_count: Optional[int] = None,
-    proxy_list: Optional[List[str]] = None,
-)
-```
-
-**Parameters:**
-- `precedence`: Tuple of header names to check (uses natural names with dashes)
-- `leftmost`: If True, use leftmost IP in comma-separated list (standard behavior)
-- `proxy_count`: Expected number of proxies (for validation)
-- `proxy_list`: List of trusted proxy IP prefixes
-
-### `get_client_ip_from_request`
-
-```python
-get_client_ip_from_request(
-    request: Request,
-    strict: bool = False
-) -> Tuple[Optional[IPAddress], bool]
-```
-
-**Parameters:**
-- `request`: FastAPI/Starlette Request object
-- `strict`: If True, enforce exact proxy count/list match
-
-**Returns:**
-- Tuple of `(ip_address, trusted_route)` where:
-  - `ip_address`: IPv4Address or IPv6Address object (or None)
-  - `trusted_route`: True if request came through validated proxies
+`python-ipware` expects WSGI-style headers (`HTTP_X_FORWARDED_FOR`), but FastAPI uses natural header names (`X-Forwarded-For`). This wrapper handles the conversion automatically so you don't have to.
 
 ## Contributing
 
