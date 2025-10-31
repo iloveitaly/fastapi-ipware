@@ -182,18 +182,7 @@ python-ipware automatically prefers:
 
 ## Default Header Precedence
 
-The default precedence order is optimized for modern cloud deployments:
-
-1. `X-Forwarded-For` - Most common, used by AWS ELB, nginx, etc.
-2. `X-Real-IP` - NGINX
-3. `CF-Connecting-IP` - Cloudflare
-4. `True-Client-IP` - Cloudflare Enterprise
-5. `Fastly-Client-IP` - Fastly, Firebase
-6. `X-Client-IP` - Microsoft Azure
-7. `X-Cluster-Client-IP` - Rackspace Cloud Load Balancers
-8. `Forwarded-For` - RFC 7239
-9. `Forwarded` - RFC 7239
-10. `Client-IP` - Akamai, Cloudflare
+The default precedence order is optimized for modern cloud deployments. See the [default precedence configuration](https://github.com/iloveitaly/fastapi-ipware/blob/main/fastapi_ipware/__init__.py#L48-L58) in the source code.
 
 ## Why fastapi-ipware?
 
