@@ -13,8 +13,6 @@ env:
   PIP_DEFAULT_TIMEOUT: 60
   PIP_RETRIES: 5
 
-  DATABASE_HOST: localhost
-
   # required otherwise github api calls are rate limited
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -29,7 +27,6 @@ jobs:
       - uses: actions/checkout@v5
       - uses: jdx/mise-action@v3
       - run: mise use python@${{ matrix.python-version }}
-      - run: docker compose up -d --wait
       - uses: iloveitaly/github-action-direnv-load-and-mask@master
       - run: uv sync
       - name: Check CLI

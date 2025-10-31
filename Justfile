@@ -3,10 +3,6 @@ setup:
     uv venv && uv sync
     @echo "activate: source ./.venv/bin/activate"
 
-# Start docker services
-up:
-    docker compose up -d --wait
-
 # Clean build artifacts and cache
 clean:
     rm -rf *.egg-info .venv
