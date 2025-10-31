@@ -1,4 +1,3 @@
-from typing import List, Optional, Tuple, Union
 import ipaddress
 
 from python_ipware.python_ipware import IpWare  # type: ignore[import-not-found]
@@ -27,10 +26,10 @@ class FastAPIIpWare(IpWare):
 
     def __init__(
         self,
-        precedence: Optional[Tuple[str, ...]] = None,
+        precedence: tuple[str, ...] | None = None,
         leftmost: bool = True,
-        proxy_count: Optional[int] = None,
-        proxy_list: Optional[List[str]] = None,
+        proxy_count: int | None = None,
+        proxy_list: list[str] | None = None,
     ):
         """
         Initialize FastAPIIpWare with optional configuration.
@@ -44,7 +43,6 @@ class FastAPIIpWare(IpWare):
             proxy_count: Expected number of proxies between client and server.
                         Used to validate and extract the correct client IP.
             proxy_list: List of trusted proxy IP prefixes (e.g., ["10.1.", "10.2.3"]).
-                       Used to validate the request came through trusted proxies.
         """
         # FastAPI-native precedence using actual header names with dashes
         if precedence is None:
@@ -75,7 +73,7 @@ class FastAPIIpWare(IpWare):
 
     def get_client_ip_from_request(
         self, request: Request, strict: bool = False
-    ) -> Tuple[Union[ipaddress.IPv4Address, ipaddress.IPv6Address, None], bool]:
+    ) -> tuple[ipaddress.IPv4Address | ipaddress.IPv6Address | None, bool]:
         """
         Get client IP address from a FastAPI/Starlette Request object.
 
