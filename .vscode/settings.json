@@ -32,5 +32,16 @@
     ".ruff_cache": true,
     ".pytest_cache": true,
     ".venv": true
+  },
+  "erlang.erlangPath": "/Users/mike/.local/share/mise/installs/erlang/28.1.1/bin",
+  "go.goroot": "/Users/mike/.local/share/mise/installs/go/1.25.1",
+  "debug.javascript.defaultRuntimeExecutable": {
+    "pwa-node": "/Users/mike/.local/share/mise/shims/node"
+  },
+  "python.defaultInterpreterPath": "/Users/mike/.local/share/mise/installs/python/3.13.7/bin/python",
+  "go.alternateTools": {
+    "go": "/Users/mike/.local/share/mise/shims/go",
+    "dlv": "/Users/mike/.local/share/mise/shims/dlv",
+    "gopls": "/Users/mike/.local/share/mise/shims/gopls"
   }
 }
