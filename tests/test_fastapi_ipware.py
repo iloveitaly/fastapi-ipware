@@ -246,6 +246,7 @@ class TestIPTypes:
         ip, _ = ipware.get_client_ip_from_request(request)
 
         assert ip == ipaddress.IPv4Address("8.8.8.8")
+        assert ip is not None
         assert ip.is_global
 
     def test_private_ip_fallback(self):
@@ -255,6 +256,7 @@ class TestIPTypes:
         ip, _ = ipware.get_client_ip_from_request(request)
 
         assert ip == ipaddress.IPv4Address("192.168.1.1")
+        assert ip is not None
         assert ip.is_private
 
     def test_loopback_ip(self):
@@ -264,6 +266,7 @@ class TestIPTypes:
         ip, _ = ipware.get_client_ip_from_request(request)
 
         assert ip == ipaddress.IPv4Address("127.0.0.1")
+        assert ip is not None
         assert ip.is_loopback
 
     def test_public_preferred_over_private(self):
@@ -279,6 +282,7 @@ class TestIPTypes:
 
         # ipware prefers public IPs - will find public even if private has higher precedence
         assert ip == ipaddress.IPv4Address("8.8.8.8")
+        assert ip is not None
         assert ip.is_global
 
 

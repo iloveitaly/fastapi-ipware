@@ -1,6 +1,7 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
+import ipaddress
 
-from python_ipware import IpWare
+from python_ipware.python_ipware import IpWare  # type: ignore[import-not-found]
 from starlette.requests import Request
 
 
@@ -74,7 +75,7 @@ class FastAPIIpWare(IpWare):
 
     def get_client_ip_from_request(
         self, request: Request, strict: bool = False
-    ) -> Tuple[Optional[object], bool]:
+    ) -> Tuple[Union[ipaddress.IPv4Address, ipaddress.IPv6Address, None], bool]:
         """
         Get client IP address from a FastAPI/Starlette Request object.
 
