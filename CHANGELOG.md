@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/iloveitaly/fastapi-ipware/compare/v0.1.0...v0.1.1) (2025-11-01)
+
+
+### Bug Fixes
+
+* prioritize provider headers over generic for client IP ([f40e4c8](https://github.com/iloveitaly/fastapi-ipware/commit/f40e4c822386f2499ccbb193e4d91615f32b4455))
+
 ## 0.1.0 (2025-10-31)
 
 
