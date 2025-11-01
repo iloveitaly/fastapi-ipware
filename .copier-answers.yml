@@ -1,2 +1,2 @@
 # this exact file name is required in this exact location if updates are to work
-{"_commit": "v0.2.1-62-g70d6cd0", "_src_path": "https://github.com/iloveitaly/python-package-template", "project_name": "fastapi-ipware", "full_name": "Michael Bianco", "email": "mike@mikebian.co", "github_username": "iloveitaly", "build_workflow": "release_please_matrix"}
+{"_commit": "v0.2.1-63-g60aca3d", "_src_path": "https://github.com/iloveitaly/python-package-template", "project_name": "fastapi-ipware", "full_name": "Michael Bianco", "email": "mike@mikebian.co", "github_username": "iloveitaly", "build_workflow": "release_please_matrix"}
