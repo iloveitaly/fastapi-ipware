@@ -102,6 +102,19 @@ class TestPrecedence:
 
         assert ip == ipaddress.IPv4Address("8.8.8.8")
 
+    def test_provider_header_precedence_over_generic(self):
+        ipware = FastAPIIpWare()
+        request = create_mock_request(
+            {
+                "X-Forwarded-For": "1.1.1.1",
+                "CF-Connecting-IP": "8.8.8.8",
+            }
+        )
+
+        ip, _ = ipware.get_client_ip_from_request(request)
+
+        assert ip == ipaddress.IPv4Address("8.8.8.8")
+
 
 class TestProxyCount:
     """Test proxy count validation."""

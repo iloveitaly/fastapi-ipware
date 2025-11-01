@@ -44,16 +44,27 @@ class FastAPIIpWare(IpWare):
                         Used to validate and extract the correct client IP.
             proxy_list: List of trusted proxy IP prefixes (e.g., ["10.1.", "10.2.3"]).
         """
-        # FastAPI-native precedence using actual header names with dashes
+        # Header precedence order: Provider-specific headers before generic ones
+        #
+        # We prioritize provider-specific headers (CF-Connecting-IP, True-Client-IP, etc.)
+        # over generic headers (X-Forwarded-For, X-Real-IP) because:
+        #   1. Provider headers are set by trusted CDN/proxy infrastructure
+        #   2. They cannot be spoofed by clients
+        #   3. They represent the most reliable source of client IP information
+        #
+        # Generic headers like X-Forwarded-For can be set by anyone and are easier
+        # to manipulate, so they should only be used as fallbacks.
         if precedence is None:
             precedence = (
-                "X-Forwarded-For",  # Most common, used by AWS ELB, nginx, etc.
-                "X-Real-IP",  # NGINX
+                # Provider-specific headers (highest reliability)
                 "CF-Connecting-IP",  # Cloudflare
                 "True-Client-IP",  # Cloudflare Enterprise
                 "Fastly-Client-IP",  # Fastly, Firebase
                 "X-Client-IP",  # Microsoft Azure
                 "X-Cluster-Client-IP",  # Rackspace Cloud Load Balancers
+                # Generic headers (fallback)
+                "X-Forwarded-For",  # Generic, used by AWS ELB, nginx, etc.
+                "X-Real-IP",  # NGINX
                 "Forwarded-For",  # RFC 7239
                 "Forwarded",  # RFC 7239
                 "Client-IP",  # Akamai, Cloudflare
