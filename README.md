@@ -1,14 +1,8 @@
-# fastapi-ipware
+# Get Real Client IPs in FastAPI Without WSGI Headaches
 
-A FastAPI/Starlette-native wrapper for [python-ipware](https://github.com/un33k/python-ipware) that eliminates the need for WSGI-style header conversion.
+I built this after getting tired of manually converting headers to WSGI format just to use [python-ipware](https://github.com/un33k/python-ipware) with FastAPI. If you're running behind Cloudflare, AWS load balancers, or any proxy setup, you know the pain: python-ipware wants `HTTP_X_FORWARDED_FOR`, but FastAPI gives you `X-Forwarded-For`. This wrapper handles that conversion so you don't have to think about it.
 
-## Features
-
-- **Zero conversion overhead** - Headers converted once at initialization, not on every request
-- **FastAPI-native API** - Works directly with FastAPI/Starlette `Request` objects
-- **Customizable precedence** - Easy to configure header priority for your infrastructure
-- **Proxy validation** - Supports trusted proxy lists and proxy count validation
-- **Thin wrapper** - Leverages all the battle-tested logic from python-ipware
+The library does the header conversion once at initialization and once per request, then leverages all the battle-tested IP detection logic from python-ipware. Works with any proxy configuration—single load balancer, CDN + load balancer, Cloudflare, you name it.
 
 ## Installation
 
@@ -22,7 +16,9 @@ Or with uv:
 uv add fastapi-ipware
 ```
 
-## Quick Start
+## Usage
+
+### Basic Example
 
 ```python
 from fastapi import FastAPI, Request
@@ -34,7 +30,7 @@ ipware = FastAPIIpWare()
 @app.get("/")
 async def get_ip(request: Request):
     ip, trusted = ipware.get_client_ip_from_request(request)
-    
+
     if ip:
         return {
             "ip": str(ip),
@@ -42,92 +38,58 @@ async def get_ip(request: Request):
             "is_public": ip.is_global,
             "is_private": ip.is_private,
         }
-    
+
     return {"error": "Could not determine IP"}
-```
-
-## Usage
-
-### Basic Usage
-
-```python
-from fastapi_ipware import FastAPIIpWare
-
-# Use default configuration (optimized for FastAPI/cloud deployments)
-ipware = FastAPIIpWare()
-
-ip, trusted = ipware.get_client_ip_from_request(request)
 ```
 
 ### Custom Header Precedence
 
-Customize which headers are checked and in what order:
+Tell the library which headers to check and in what order:
 
 ```python
-# Prioritize Cloudflare headers
+# Cloudflare setup
 ipware = FastAPIIpWare(
-    precedence=(
-        "CF-Connecting-IP",
-        "X-Forwarded-For",
-        "X-Real-IP",
-    )
+    precedence=("CF-Connecting-IP", "X-Forwarded-For")
 )
 
 # NGINX configuration
 ipware = FastAPIIpWare(
-    precedence=(
-        "X-Real-IP",
-        "X-Forwarded-For",
-    )
+    precedence=("X-Real-IP", "X-Forwarded-For")
 )
 ```
 
 ### Proxy Count Validation
 
-Validate that requests pass through the expected number of proxies:
+If you know exactly how many proxies sit between your users and your app, you can validate that:
 
 ```python
 # Expect exactly 1 proxy (e.g., AWS ALB)
 ipware = FastAPIIpWare(proxy_count=1)
 
-# In strict mode, must be exactly 1 proxy
+# Strict mode: must be exactly 1 proxy
 ip, trusted = ipware.get_client_ip_from_request(request, strict=True)
 
-# In non-strict mode, allow 1 or more proxies
+# Non-strict mode: allow 1 or more proxies
 ip, trusted = ipware.get_client_ip_from_request(request, strict=False)
 ```
 
-### Trusted Proxy List
+### Trusted Proxy Lists
 
 Validate that requests pass through specific trusted proxies:
 
 ```python
 # Trust specific proxy IP prefixes
 ipware = FastAPIIpWare(
-    proxy_list=["10.0.", "10.1."]  # AWS internal IPs
+    proxy_list=["10.0.", "10.1."]  # Your VPC CIDR ranges
 )
 
 ip, trusted = ipware.get_client_ip_from_request(request)
-
 # trusted=True only if request came through specified proxies
 ```
 
-### Combined Validation
+### Real-World Deployment Examples
 
-Use both proxy count and trusted proxy list:
-
-```python
-# Expect 1 proxy from a specific IP range
-ipware = FastAPIIpWare(
-    proxy_count=1,
-    proxy_list=["10.0."]
-)
-```
-
-## Real-World Examples
-
-### AWS Application Load Balancer
-
+**AWS Application Load Balancer:**
 ```python
 ipware = FastAPIIpWare(
     proxy_count=1,
@@ -135,16 +97,14 @@ ipware = FastAPIIpWare(
 )
 ```
 
-### Cloudflare
-
+**Cloudflare:**
 ```python
 ipware = FastAPIIpWare(
     precedence=("CF-Connecting-IP",)
 )
 ```
 
-### Multiple Proxies (CDN + Load Balancer)
-
+**Multiple Proxies (CDN + Load Balancer):**
 ```python
 ipware = FastAPIIpWare(
     proxy_count=2,
@@ -152,8 +112,7 @@ ipware = FastAPIIpWare(
 )
 ```
 
-### NGINX Reverse Proxy
-
+**NGINX Reverse Proxy:**
 ```python
 ipware = FastAPIIpWare(
     precedence=("X-Real-IP", "X-Forwarded-For"),
@@ -161,9 +120,19 @@ ipware = FastAPIIpWare(
 )
 ```
 
-## IP Address Types
+## Features
 
-The returned IP address object has useful properties:
+- Works directly with FastAPI/Starlette `Request` objects—no manual header conversion
+- Configure header precedence for your specific infrastructure (Cloudflare, AWS, NGINX, etc.)
+- Validate proxy count to ensure requests pass through expected infrastructure
+- Trusted proxy lists to verify requests come from known proxies
+- Automatic preference for public IPs over private/loopback addresses
+- Full IPv4 and IPv6 support
+- Returns Python `ipaddress` objects with useful properties (`is_global`, `is_private`, etc.)
+
+## How IP Detection Works
+
+The returned IP object is a Python `ipaddress.IPv4Address` or `ipaddress.IPv6Address` with useful properties:
 
 ```python
 ip, _ = ipware.get_client_ip_from_request(request)
@@ -175,27 +144,20 @@ if ip:
     print(f"Is multicast: {ip.is_multicast}")
 ```
 
-python-ipware automatically prefers:
-1. Public (global) IPs first
-2. Private IPs second
-3. Loopback IPs last
+python-ipware automatically prefers public IPs over private IPs over loopback addresses when multiple IPs are available.
 
 ## Default Header Precedence
 
-The default precedence order is optimized for modern cloud deployments. See the [default precedence configuration](https://github.com/iloveitaly/fastapi-ipware/blob/main/fastapi_ipware/__init__.py#L48-L58) in the source code.
+The library uses a sensible default that prioritizes provider-specific headers (CF-Connecting-IP, True-Client-IP, Fastly-Client-IP) over generic headers (X-Forwarded-For, X-Real-IP). Provider headers are more trustworthy since they're set by your CDN/proxy infrastructure and can't be spoofed by clients.
 
-## Why fastapi-ipware?
-
-`python-ipware` expects WSGI-style headers (`HTTP_X_FORWARDED_FOR`), but FastAPI uses natural header names (`X-Forwarded-For`). This wrapper handles the conversion automatically so you don't have to.
+See the [full default precedence list](https://github.com/iloveitaly/fastapi-ipware/blob/main/fastapi_ipware/__init__.py#L48-L71) in the source code.
 
 ## Contributing
 
-Contributions welcome! This is a thin wrapper around python-ipware, so most IP detection logic lives there.
-
-## License
-
-[MIT License](LICENSE.md)
+Contributions welcome! This is a thin wrapper around python-ipware, so most IP detection logic lives in that library.
 
 ## Credits
 
-Built on top of [python-ipware](https://github.com/un33k/python-ipware) by un33k.
+Built on [python-ipware](https://github.com/un33k/python-ipware) by un33k.
+
+# [MIT License](LICENSE.md)
