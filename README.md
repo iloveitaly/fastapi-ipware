@@ -150,4 +150,5 @@ python-ipware automatically prefers:
 
 ## Credits
 
-Built on top of [python-ipware](https://github.com/un33k/python-ipware) by un33k.
+- Built on top of [python-ipware](https://github.com/un33k/python-ipware) by un33k.
+- https://github.com/long2ice/fastapi-limiter/blob/8d179c058fa2aaf98f3450c9026a7300ae2b3bdd/fastapi_limiter/__init__.py#L11
