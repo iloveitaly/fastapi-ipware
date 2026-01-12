@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.2](https://github.com/iloveitaly/fastapi-ipware/compare/v0.1.1...v0.1.2) (2026-01-12)
+
+
+### Documentation
+
+* simplify readme ([b03b266](https://github.com/iloveitaly/fastapi-ipware/commit/b03b2664389bb0c6fa0631c4956d03891baad64f))
+* update credits section with additional link ([0e68726](https://github.com/iloveitaly/fastapi-ipware/commit/0e68726c861b2f3b400c68e33d891fdc6af36fc0))
+
 ## [0.1.1](https://github.com/iloveitaly/fastapi-ipware/compare/v0.1.0...v0.1.1) (2025-11-01)
 
 
