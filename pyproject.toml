@@ -1,6 +1,6 @@
 [project]
 name = "fastapi-ipware"
-version = "0.1.1"
+version = "0.1.2"
 description = "FastAPI/Starlette-native wrapper for python-ipware to get client IP addresses"
 keywords = [
     "fastapi",
