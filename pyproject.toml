@@ -20,7 +20,7 @@ urls = { "Repository" = "https://github.com/iloveitaly/fastapi-ipware" }
 # additional packaging information: https://packaging.python.org/en/latest/specifications/core-metadata/#license
 
 [build-system]
-requires = ["uv_build>=0.8.11,<0.10.0"]
+requires = ["uv_build>=0.9.0,<0.10.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]

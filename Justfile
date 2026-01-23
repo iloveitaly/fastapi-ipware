@@ -49,7 +49,7 @@ lint-fix:
 clean:
     rm -rf *.egg-info .venv || true
     find . -type f -name "*.pyc" -delete
-	find . -type d -name "__pycache__" -delete || true
+    find . -type d -name "__pycache__" -delete || true
 
 # Update copier template
 update_copier:
