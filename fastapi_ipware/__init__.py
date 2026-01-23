@@ -70,15 +70,20 @@ class FastAPIIpWare(IpWare):
                 "Forwarded-For",  # RFC 7239 (plain IP list only)
                 "Forwarded",  # RFC 7239 (plain IP list only)
                 "Client-IP",  # Akamai, Cloudflare
+                "REMOTE_ADDR",  # Direct connection fallback
             )
 
         # Store FastAPI-style precedence for reference
         self._fastapi_precedence = precedence
 
-        # Convert user-friendly header names (with dashes) to WSGI format once
-        # This happens only at initialization, not on every request
+        # Convert user-friendly header names (with dashes) to WSGI format once.
+        # REMOTE_ADDR is a WSGI/ASGI convention, not an HTTP header, so it must
+        # not be prefixed with HTTP_.
         wsgi_precedence = tuple(
-            f"HTTP_{header.upper().replace('-', '_')}" for header in precedence
+            "REMOTE_ADDR"
+            if header == "REMOTE_ADDR"
+            else f"HTTP_{header.upper().replace('-', '_')}"
+            for header in precedence
         )
 
         # Initialize parent class with WSGI-style headers
