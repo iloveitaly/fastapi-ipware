@@ -6,10 +6,15 @@ from starlette.datastructures import Headers
 from fastapi_ipware import FastAPIIpWare
 
 
-def create_mock_request(headers_dict):
+def create_mock_request(headers_dict, client_host: str | None = None):
     """Helper to create a mock Request object with specified headers."""
     request = MagicMock()
     request.headers = Headers(headers_dict)
+    request.client = None
+
+    if client_host:
+        request.client = MagicMock(host=client_host)
+
     return request
 
 
@@ -101,6 +106,14 @@ class TestPrecedence:
         ip, trusted = ipware.get_client_ip_from_request(request)
 
         assert ip == ipaddress.IPv4Address("8.8.8.8")
+
+    def test_cloudflare_used_when_no_xff(self):
+        ipware = FastAPIIpWare(precedence=("CF-Connecting-IP", "X-Forwarded-For"))
+        request = create_mock_request({"CF-Connecting-IP": "198.51.100.42"})
+
+        ip, _ = ipware.get_client_ip_from_request(request)
+
+        assert ip == ipaddress.IPv4Address("198.51.100.42")
 
     def test_provider_header_precedence_over_generic(self):
         ipware = FastAPIIpWare()
@@ -281,6 +294,18 @@ class TestIPTypes:
         assert ip == ipaddress.IPv4Address("127.0.0.1")
         assert ip is not None
         assert ip.is_loopback
+
+
+class TestClientHostFallback:
+    """Test fallback to client host when no headers are present."""
+
+    def test_fallback_to_client_host_ipv4(self):
+        ipware = FastAPIIpWare()
+        request = create_mock_request({}, client_host="198.51.100.23")
+
+        ip, _ = ipware.get_client_ip_from_request(request)
+
+        assert ip == ipaddress.IPv4Address("198.51.100.23")
 
     def test_public_preferred_over_private(self):
         # ipware returns first valid IP based on precedence, then filters by type

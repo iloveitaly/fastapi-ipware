@@ -65,8 +65,10 @@ class FastAPIIpWare(IpWare):
                 # Generic headers (fallback)
                 "X-Forwarded-For",  # Generic, used by AWS ELB, nginx, etc.
                 "X-Real-IP",  # NGINX
-                "Forwarded-For",  # RFC 7239
-                "Forwarded",  # RFC 7239
+                # NOTE: Upstream python-ipware treats Forwarded headers as plain IP lists.
+                # RFC 7239 `Forwarded` parameters (for=) are not parsed.
+                "Forwarded-For",  # RFC 7239 (plain IP list only)
+                "Forwarded",  # RFC 7239 (plain IP list only)
                 "Client-IP",  # Akamai, Cloudflare
             )
 
@@ -114,6 +116,11 @@ class FastAPIIpWare(IpWare):
             f"HTTP_{name.upper().replace('-', '_')}": value
             for name, value in request.headers.items()
         }
+
+        if request.client:
+            # NOTE: python-ipware falls back to REMOTE_ADDR when no headers match.
+            # Map Starlette's connection info to that expected key.
+            meta["REMOTE_ADDR"] = request.client.host
 
         return self.get_client_ip(meta, strict=strict)
 
