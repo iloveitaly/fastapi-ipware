@@ -27,10 +27,6 @@ uv add fastapi-ipware
 
 ## Quick Start
 
-`trusted` is true only when the request came through the proxies configured with `proxy_count` or `proxy_list`.
-
-`proxy_count=N` returns the address just left of the N rightmost proxies, instead of the first public address, and rejects a shorter chain. `X-Forwarded-For: 203.0.113.10, 10.0.0.1, 10.0.0.2` returns `203.0.113.10` with no `proxy_count`, and `10.0.0.1` with `proxy_count=1`.
-
 ### Using FastAPI Dependency Injection
 
 ```python
@@ -44,6 +40,8 @@ ipware = FastAPIIpWare()
 
 @app.get("/")
 async def get_ip(client: Annotated[ClientIpResult, Depends(ipware)]):
+    # trusted is true only when the request came through the proxies
+    # configured with proxy_count or proxy_list
     ip, trusted = client
     return {
         "ip": str(ip) if ip else None,
@@ -132,6 +130,10 @@ Validate that requests pass through the expected number of proxies:
 
 ```python
 # Expect exactly 1 proxy (e.g., AWS ALB).
+# proxy_count=N returns the address just left of the N rightmost proxies,
+# instead of the first public address, and rejects a shorter chain.
+# X-Forwarded-For: 203.0.113.10, 10.0.0.1, 10.0.0.2 returns 203.0.113.10
+# with no proxy_count, and 10.0.0.1 with proxy_count=1.
 # default_strict applies to Depends(ipware), dependency(), and IpWareMiddleware.
 ipware = FastAPIIpWare(proxy_count=1, default_strict=True)
 
