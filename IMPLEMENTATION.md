@@ -89,17 +89,12 @@ ip, trusted = ipware.get_client_ip_from_request(request)
 
 ### Custom Precedence
 ```python
-ipware = FastAPIIpWare(
-    precedence=("CF-Connecting-IP", "X-Forwarded-For")
-)
+ipware = FastAPIIpWare(precedence=("CF-Connecting-IP", "X-Forwarded-For"))
 ```
 
 ### Proxy Validation
 ```python
-ipware = FastAPIIpWare(
-    proxy_count=1,
-    proxy_list=["10.0."]
-)
+ipware = FastAPIIpWare(proxy_count=1, proxy_list=["10.0."])
 ```
 
 ## Benefits Over Direct python-ipware Usage
