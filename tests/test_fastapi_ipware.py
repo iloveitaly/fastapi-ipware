@@ -34,7 +34,7 @@ class TestBasicFunctionality:
         ipware = FastAPIIpWare(leftmost=True)
         request = create_mock_request({"X-Forwarded-For": "8.8.8.8, 1.1.1.1, 9.9.9.9"})
 
-        ip, trusted = ipware.get_client_ip_from_request(request)
+        ip, _ = ipware.get_client_ip_from_request(request)
 
         assert ip == ipaddress.IPv4Address("8.8.8.8")
 
@@ -42,7 +42,7 @@ class TestBasicFunctionality:
         ipware = FastAPIIpWare(leftmost=False)
         request = create_mock_request({"X-Forwarded-For": "8.8.8.8, 1.1.1.1, 9.9.9.9"})
 
-        ip, trusted = ipware.get_client_ip_from_request(request)
+        ip, _ = ipware.get_client_ip_from_request(request)
 
         assert ip == ipaddress.IPv4Address("9.9.9.9")
 
@@ -50,7 +50,7 @@ class TestBasicFunctionality:
         ipware = FastAPIIpWare()
         request = create_mock_request({"X-Forwarded-For": "2001:db8::1"})
 
-        ip, trusted = ipware.get_client_ip_from_request(request)
+        ip, _ = ipware.get_client_ip_from_request(request)
 
         assert ip == ipaddress.IPv6Address("2001:db8::1")
 
@@ -67,7 +67,7 @@ class TestBasicFunctionality:
         ipware = FastAPIIpWare()
         request = create_mock_request({"X-Forwarded-For": "invalid-ip"})
 
-        ip, trusted = ipware.get_client_ip_from_request(request)
+        ip, _ = ipware.get_client_ip_from_request(request)
 
         assert ip is None
 
@@ -82,7 +82,7 @@ class TestPrecedence:
             {"X-Forwarded-For": "8.8.8.8", "X-Real-IP": "1.1.1.1"}
         )
 
-        ip, trusted = ipware.get_client_ip_from_request(request)
+        ip, _ = ipware.get_client_ip_from_request(request)
 
         assert ip == ipaddress.IPv4Address("8.8.8.8")
 
@@ -93,7 +93,7 @@ class TestPrecedence:
             {"X-Forwarded-For": "8.8.8.8", "X-Real-IP": "1.1.1.1"}
         )
 
-        ip, trusted = ipware.get_client_ip_from_request(request)
+        ip, _ = ipware.get_client_ip_from_request(request)
 
         assert ip == ipaddress.IPv4Address("1.1.1.1")
 
@@ -103,7 +103,7 @@ class TestPrecedence:
             {"CF-Connecting-IP": "8.8.8.8", "X-Forwarded-For": "1.1.1.1"}
         )
 
-        ip, trusted = ipware.get_client_ip_from_request(request)
+        ip, _ = ipware.get_client_ip_from_request(request)
 
         assert ip == ipaddress.IPv4Address("8.8.8.8")
 

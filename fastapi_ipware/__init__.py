@@ -3,6 +3,8 @@ import ipaddress
 from python_ipware.python_ipware import IpWare  # type: ignore[import-not-found]
 from starlette.requests import Request
 
+from .version import __version__
+
 
 class FastAPIIpWare(IpWare):
     """
@@ -130,4 +132,4 @@ class FastAPIIpWare(IpWare):
         return self.get_client_ip(meta, strict=strict)
 
 
-__all__ = ["FastAPIIpWare"]
+__all__ = ["FastAPIIpWare", "__version__"]

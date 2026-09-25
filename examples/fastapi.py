@@ -5,6 +5,7 @@ Run with: uvicorn example:app --reload
 """
 
 from fastapi import FastAPI, Request
+
 from fastapi_ipware import FastAPIIpWare
 
 app = FastAPI()

@@ -1,3 +1,8 @@
+[![Release Notes](https://img.shields.io/github/release/iloveitaly/fastapi-ipware)](https://github.com/iloveitaly/fastapi-ipware/releases)
+[![Downloads](https://static.pepy.tech/badge/fastapi-ipware/month)](https://pepy.tech/project/fastapi-ipware)
+![GitHub CI Status](https://github.com/iloveitaly/fastapi-ipware/actions/workflows/build_and_publish.yml/badge.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 # fastapi-ipware
 
 A FastAPI/Starlette-native wrapper for [python-ipware](https://github.com/un33k/python-ipware) that eliminates the need for WSGI-style header conversion.
@@ -31,10 +36,11 @@ from fastapi_ipware import FastAPIIpWare
 app = FastAPI()
 ipware = FastAPIIpWare()
 
+
 @app.get("/")
 async def get_ip(request: Request):
     ip, trusted = ipware.get_client_ip_from_request(request)
-    
+
     if ip:
         return {
             "ip": str(ip),
@@ -42,7 +48,7 @@ async def get_ip(request: Request):
             "is_public": ip.is_global,
             "is_private": ip.is_private,
         }
-    
+
     return {"error": "Could not determine IP"}
 ```
 
@@ -118,10 +124,7 @@ Use both proxy count and trusted proxy list:
 
 ```python
 # Expect 1 proxy from a specific IP range
-ipware = FastAPIIpWare(
-    proxy_count=1,
-    proxy_list=["10.0."]
-)
+ipware = FastAPIIpWare(proxy_count=1, proxy_list=["10.0."])
 ```
 
 ## IP Address Types
@@ -152,3 +155,7 @@ python-ipware automatically prefers:
 
 - Built on top of [python-ipware](https://github.com/un33k/python-ipware) by un33k.
 - https://github.com/long2ice/fastapi-limiter/blob/8d179c058fa2aaf98f3450c9026a7300ae2b3bdd/fastapi_limiter/__init__.py#L11
+
+---
+
+*This project was created from [iloveitaly/python-package-template](https://github.com/iloveitaly/python-package-template)*
