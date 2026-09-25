@@ -4,9 +4,11 @@ Example FastAPI application using fastapi-ipware to extract client IP addresses.
 Run with: uvicorn example:app --reload
 """
 
-from fastapi import FastAPI, Request
+from typing import Annotated
 
-from fastapi_ipware import FastAPIIpWare
+from fastapi import Depends, FastAPI, Request
+
+from fastapi_ipware import ClientIpResult, FastAPIIpWare
 
 app = FastAPI()
 
@@ -39,6 +41,21 @@ async def get_client_ip(request: Request):
         }
 
     return {"error": "Could not determine IP address"}
+
+
+@app.get("/dep")
+async def get_client_ip_dep(client: Annotated[ClientIpResult, Depends(ipware)]):
+    """Get the client's IP using FastAPI dependency injection."""
+    ip, trusted = client
+    return {"ip": str(ip) if ip else None, "trusted": trusted}
+
+
+@app.get("/ip")
+async def get_client_ip_str_dep(
+    ip_str: Annotated[str | None, Depends(ipware.get_ip_str)],
+):
+    """Get just the IP string using FastAPI dependency injection."""
+    return {"ip": ip_str}
 
 
 @app.get("/health")
