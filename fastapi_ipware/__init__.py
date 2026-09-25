@@ -1,9 +1,33 @@
 import ipaddress
+from typing import Literal
 
-from python_ipware.python_ipware import IpWare  # type: ignore[import-not-found]
+from python_ipware import IpWare
 from starlette.requests import Request
 
 from .version import __version__
+
+Algorithm = Literal["auto", "modern", "legacy"]
+
+DEFAULT_PRECEDENCE: tuple[str, ...] = (
+    # Provider-specific headers (highest reliability)
+    "CF-Connecting-IP",  # Cloudflare
+    "True-Client-IP",  # Cloudflare Enterprise, Akamai
+    "Fastly-Client-IP",  # Fastly, Firebase
+    "Fly-Client-IP",  # Fly.io
+    "X-Client-IP",  # Microsoft Azure
+    "X-Azure-ClientIP",  # Azure Front Door
+    "DO-Connecting-IP",  # DigitalOcean App Platform
+    "X-Cluster-Client-IP",  # Rackspace Cloud Load Balancers
+    "X-Appengine-User-IP",  # Google App Engine
+    "X-Envoy-External-Address",  # Envoy / Istio
+    # Generic headers (fallback)
+    "X-Forwarded-For",  # Generic, used by AWS ELB, nginx, etc.
+    "X-Real-IP",  # NGINX
+    "Forwarded-For",  # Plain IP list variant
+    "Forwarded",  # RFC 7239 (for=...;proto=...)
+    "Client-IP",  # Akamai, Cloudflare fallback
+    "REMOTE_ADDR",  # Direct connection fallback
+)
 
 
 class FastAPIIpWare(IpWare):
@@ -32,6 +56,7 @@ class FastAPIIpWare(IpWare):
         leftmost: bool = True,
         proxy_count: int | None = None,
         proxy_list: list[str] | None = None,
+        algorithm: Algorithm = "auto",
     ):
         """
         Initialize FastAPIIpWare with optional configuration.
@@ -44,52 +69,63 @@ class FastAPIIpWare(IpWare):
                      If False, use rightmost IP (rare legacy configurations).
             proxy_count: Expected number of proxies between client and server.
                         Used to validate and extract the correct client IP.
-            proxy_list: List of trusted proxy IP prefixes (e.g., ["10.1.", "10.2.3"]).
+            proxy_list: List of trusted proxy IP prefixes, complete IPs, or CIDR networks
+                       (e.g., ["10.1.", "198.84.193.157", "100.64.0.0/10"]).
+            algorithm: Algorithm engine to use: "auto" (default, uses modern),
+                      "modern" (v4 enhanced engine), or "legacy" (frozen v3 engine).
         """
-        # Header precedence order: Provider-specific headers before generic ones
-        #
-        # We prioritize provider-specific headers (CF-Connecting-IP, True-Client-IP, etc.)
-        # over generic headers (X-Forwarded-For, X-Real-IP) because:
-        #   1. Provider headers are set by trusted CDN/proxy infrastructure
-        #   2. They cannot be spoofed by clients
-        #   3. They represent the most reliable source of client IP information
-        #
-        # Generic headers like X-Forwarded-For can be set by anyone and are easier
-        # to manipulate, so they should only be used as fallbacks.
         if precedence is None:
-            precedence = (
-                # Provider-specific headers (highest reliability)
-                "CF-Connecting-IP",  # Cloudflare
-                "True-Client-IP",  # Cloudflare Enterprise
-                "Fastly-Client-IP",  # Fastly, Firebase
-                "X-Client-IP",  # Microsoft Azure
-                "X-Cluster-Client-IP",  # Rackspace Cloud Load Balancers
-                # Generic headers (fallback)
-                "X-Forwarded-For",  # Generic, used by AWS ELB, nginx, etc.
-                "X-Real-IP",  # NGINX
-                # NOTE: Upstream python-ipware treats Forwarded headers as plain IP lists.
-                # RFC 7239 `Forwarded` parameters (for=) are not parsed.
-                "Forwarded-For",  # RFC 7239 (plain IP list only)
-                "Forwarded",  # RFC 7239 (plain IP list only)
-                "Client-IP",  # Akamai, Cloudflare
-                "REMOTE_ADDR",  # Direct connection fallback
-            )
+            precedence = DEFAULT_PRECEDENCE
 
         # Store FastAPI-style precedence for reference
         self._fastapi_precedence = precedence
 
-        # Convert user-friendly header names (with dashes) to WSGI format once.
-        # REMOTE_ADDR is a WSGI/ASGI convention, not an HTTP header, so it must
-        # not be prefixed with HTTP_.
-        wsgi_precedence = tuple(
-            "REMOTE_ADDR"
-            if header == "REMOTE_ADDR"
-            else f"HTTP_{header.upper().replace('-', '_')}"
-            for header in precedence
+        # Expand precedence to support both natural and WSGI formats
+        expanded_precedence: list[str] = []
+        for header in precedence:
+            if header == "REMOTE_ADDR":
+                if "REMOTE_ADDR" not in expanded_precedence:
+                    expanded_precedence.append("REMOTE_ADDR")
+            elif header.startswith("HTTP_"):
+                if header not in expanded_precedence:
+                    expanded_precedence.append(header)
+                non_http = header[5:].replace("_", "-")
+                if non_http not in expanded_precedence:
+                    expanded_precedence.append(non_http)
+            else:
+                if header not in expanded_precedence:
+                    expanded_precedence.append(header)
+                wsgi_form = f"HTTP_{header.upper().replace('-', '_')}"
+                if wsgi_form not in expanded_precedence:
+                    expanded_precedence.append(wsgi_form)
+
+        super().__init__(
+            tuple(expanded_precedence),
+            leftmost=leftmost,
+            proxy_count=proxy_count,
+            proxy_list=proxy_list,
+            algorithm=algorithm,
         )
 
-        # Initialize parent class with WSGI-style headers
-        super().__init__(wsgi_precedence, leftmost, proxy_count, proxy_list)
+    @property
+    def precedence(self) -> tuple[str, ...]:
+        """Header precedence tuple from the active engine."""
+        return getattr(self.engine, "precedence", ())
+
+    @property
+    def leftmost(self) -> bool:
+        """Leftmost setting from the active engine."""
+        return getattr(self.engine, "leftmost", True)
+
+    @property
+    def proxy_count(self) -> int | None:
+        """Proxy count setting from the active engine."""
+        return getattr(self.engine, "proxy_count", None)
+
+    @property
+    def proxy_list(self) -> list[str]:
+        """Proxy list setting from the active engine."""
+        return getattr(self.engine, "proxy_list", [])
 
     def get_client_ip_from_request(
         self, request: Request, strict: bool = False
@@ -98,7 +134,7 @@ class FastAPIIpWare(IpWare):
         Get client IP address from a FastAPI/Starlette Request object.
 
         This is the main method you should use with FastAPI/Starlette applications.
-        It handles the header conversion automatically.
+        It handles header conversion automatically.
 
         Args:
             request: FastAPI/Starlette Request object
@@ -117,19 +153,19 @@ class FastAPIIpWare(IpWare):
             ...     print(f"Is global: {ip.is_global}")
             ...     print(f"Is private: {ip.is_private}")
         """
-        # Convert Starlette headers to WSGI-style dict that parent class expects
-        # This happens once per request
+        # Populate both WSGI-style headers and original Starlette headers
         meta = {
             f"HTTP_{name.upper().replace('-', '_')}": value
             for name, value in request.headers.items()
         }
+        for name, value in request.headers.items():
+            meta[name] = value
 
         if request.client:
-            # NOTE: python-ipware falls back to REMOTE_ADDR when no headers match.
-            # Map Starlette's connection info to that expected key.
+            # Map Starlette's connection info to REMOTE_ADDR fallback
             meta["REMOTE_ADDR"] = request.client.host
 
         return self.get_client_ip(meta, strict=strict)
 
 
-__all__ = ["FastAPIIpWare", "__version__"]
+__all__ = ["DEFAULT_PRECEDENCE", "FastAPIIpWare", "__version__"]

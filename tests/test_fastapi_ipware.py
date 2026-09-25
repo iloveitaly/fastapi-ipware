@@ -392,3 +392,84 @@ class TestRealWorldScenarios:
 
         assert ip == ipaddress.IPv4Address("8.8.8.8")
         assert trusted is True
+
+
+class TestIpwareV4Features:
+    """Test features and compatibility introduced in python-ipware 4.x."""
+
+    def test_rfc7239_forwarded_for_parameter(self):
+        ipware = FastAPIIpWare()
+        request = create_mock_request({"Forwarded": 'for="198.51.100.1";proto=https'})
+
+        ip, _ = ipware.get_client_ip_from_request(request)
+
+        assert ip == ipaddress.IPv4Address("198.51.100.1")
+
+    def test_new_edge_headers(self):
+        for header_name in (
+            "Fly-Client-IP",
+            "X-Azure-ClientIP",
+            "DO-Connecting-IP",
+            "X-Envoy-External-Address",
+        ):
+            ipware = FastAPIIpWare()
+            request = create_mock_request({header_name: "198.51.100.2"})
+            ip, _ = ipware.get_client_ip_from_request(request)
+            assert ip == ipaddress.IPv4Address("198.51.100.2"), (
+                f"Failed for {header_name}"
+            )
+
+    def test_cidr_network_proxy_list(self):
+        ipware = FastAPIIpWare(proxy_count=1, proxy_list=["100.64.0.0/10"])
+        request = create_mock_request({"X-Forwarded-For": "8.8.8.8, 100.64.1.1"})
+
+        ip, trusted = ipware.get_client_ip_from_request(request)
+
+        assert ip == ipaddress.IPv4Address("8.8.8.8")
+        assert trusted is True
+
+    def test_algorithm_selection(self):
+        ipware_modern = FastAPIIpWare(algorithm="modern")
+        assert ipware_modern.algorithm == "modern"
+
+        ipware_legacy = FastAPIIpWare(algorithm="legacy")
+        assert ipware_legacy.algorithm == "legacy"
+
+        ipware_auto = FastAPIIpWare(algorithm="auto")
+        assert ipware_auto.algorithm == "auto"
+
+    def test_property_accessors(self):
+        ipware = FastAPIIpWare(
+            precedence=("CF-Connecting-IP", "X-Forwarded-For"),
+            leftmost=False,
+            proxy_count=2,
+            proxy_list=["10.0.0.0/8"],
+        )
+        assert isinstance(ipware.precedence, tuple)
+        assert "CF-Connecting-IP" in ipware.precedence
+        assert ipware.leftmost is False
+        assert ipware.proxy_count == 2
+        assert ipware.proxy_list == ["10.0.0.0/8"]
+
+    def test_direct_get_client_ip_with_various_header_formats(self):
+        ipware = FastAPIIpWare(
+            precedence=("HTTP_X_REAL_IP", "CF-Connecting-IP", "X-Forwarded-For")
+        )
+
+        # Natural header format
+        ip1, _ = ipware.get_client_ip({"X-Forwarded-For": "8.8.8.8"})
+        assert ip1 == ipaddress.IPv4Address("8.8.8.8")
+
+        # Lowercase header format
+        ip2, _ = ipware.get_client_ip({"x-forwarded-for": "8.8.8.8"})
+        assert ip2 == ipaddress.IPv4Address("8.8.8.8")
+
+        # WSGI format
+        ip3, _ = ipware.get_client_ip({"HTTP_X_FORWARDED_FOR": "8.8.8.8"})
+        assert ip3 == ipaddress.IPv4Address("8.8.8.8")
+
+        # Custom precedence with HTTP_ prefix provided by user
+        ip4, _ = ipware.get_client_ip(
+            {"x-real-ip": "1.1.1.1", "cf-connecting-ip": "2.2.2.2"}
+        )
+        assert ip4 == ipaddress.IPv4Address("1.1.1.1")

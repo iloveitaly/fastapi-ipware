@@ -215,7 +215,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "python-ipware", specifier = ">=3.0.0" },
+    { name = "python-ipware", specifier = ">=4.1.0" },
     { name = "starlette", specifier = ">=0.49.1" },
 ]
 

@@ -105,12 +105,12 @@ ip, trusted = ipware.get_client_ip_from_request(request, strict=False)
 
 ### Trusted Proxy List
 
-Validate that requests pass through specific trusted proxies:
+Validate that requests pass through specific trusted proxies (supports IP prefixes, exact IPs, and CIDR networks):
 
 ```python
-# Trust specific proxy IP prefixes
+# Trust specific proxy IP prefixes or CIDR networks
 ipware = FastAPIIpWare(
-    proxy_list=["10.0.", "10.1."]  # AWS internal IPs
+    proxy_list=["10.0.", "10.1.", "100.64.0.0/10"]  # AWS internal IPs and CGNAT CIDR
 )
 
 ip, trusted = ipware.get_client_ip_from_request(request)
@@ -125,6 +125,18 @@ Use both proxy count and trusted proxy list:
 ```python
 # Expect 1 proxy from a specific IP range
 ipware = FastAPIIpWare(proxy_count=1, proxy_list=["10.0."])
+```
+
+### Algorithm Engine Selection
+
+Choose between python-ipware 4.x engines (`auto` / `modern` / `legacy`):
+
+```python
+# Modern engine (default): enhanced header parsing and RFC 7239 support
+ipware = FastAPIIpWare(algorithm="modern")
+
+# Legacy engine: frozen byte-for-byte v3 behavior
+ipware = FastAPIIpWare(algorithm="legacy")
 ```
 
 ## IP Address Types
