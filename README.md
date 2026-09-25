@@ -27,7 +27,38 @@ uv add fastapi-ipware
 
 ## Quick Start
 
-[Take a look at this example usage.](https://github.com/iloveitaly/structlog-config/blob/1e32f7afd206485b1356b322596cc19cb0bef8ba/structlog_config/fastapi_access_logger.py#L57-L72)
+`trusted` is true only when the request came through the proxies configured with `proxy_count` or `proxy_list`.
+
+`proxy_count=N` returns the address just left of the N rightmost proxies, instead of the first public address, and rejects a shorter chain. `X-Forwarded-For: 203.0.113.10, 10.0.0.1, 10.0.0.2` returns `203.0.113.10` with no `proxy_count`, and `10.0.0.1` with `proxy_count=1`.
+
+### Using FastAPI Dependency Injection
+
+```python
+from typing import Annotated
+from fastapi import Depends, FastAPI
+from fastapi_ipware import ClientIpResult, FastAPIIpWare
+
+app = FastAPI()
+ipware = FastAPIIpWare()
+
+
+@app.get("/")
+async def get_ip(client: Annotated[ClientIpResult, Depends(ipware)]):
+    ip, trusted = client
+    return {
+        "ip": str(ip) if ip else None,
+        "trusted": trusted,
+        "is_public": ip.is_global if ip else None,
+    }
+
+
+# Or inject only the IP object or string directly:
+@app.get("/ip-string")
+async def get_ip_string(ip_str: Annotated[str | None, Depends(ipware.get_ip_str)]):
+    return {"ip": ip_str}
+```
+
+### Using Request Directly
 
 ```python
 from fastapi import FastAPI, Request
@@ -40,29 +71,36 @@ ipware = FastAPIIpWare()
 @app.get("/")
 async def get_ip(request: Request):
     ip, trusted = ipware.get_client_ip_from_request(request)
-
-    if ip:
-        return {
-            "ip": str(ip),
-            "trusted": trusted,
-            "is_public": ip.is_global,
-            "is_private": ip.is_private,
-        }
-
-    return {"error": "Could not determine IP"}
+    return {"ip": str(ip) if ip else None, "trusted": trusted}
 ```
 
-## Usage
+### Using ASGI Middleware
 
-### Basic Usage
+Automatically extract the client IP onto `request.state` for every request:
 
 ```python
-from fastapi_ipware import FastAPIIpWare
+from fastapi import FastAPI, Request
+from fastapi_ipware import IpWareMiddleware
 
-# Use default configuration (optimized for FastAPI/cloud deployments)
-ipware = FastAPIIpWare()
+app = FastAPI()
+app.add_middleware(IpWareMiddleware)
 
-ip, trusted = ipware.get_client_ip_from_request(request)
+
+@app.get("/")
+async def get_ip(request: Request):
+    return {
+        "ip": request.state.client_ip_str,
+        "trusted": request.state.ip_trusted,
+    }
+```
+
+Pass a configured resolver when you need one. Omit `strict` to use that resolver's `default_strict`; pass `strict=` to override it.
+
+```python
+from fastapi_ipware import FastAPIIpWare, IpWareMiddleware
+
+ipware = FastAPIIpWare(proxy_count=1, default_strict=True)
+app.add_middleware(IpWareMiddleware, ipware=ipware)
 ```
 
 ### Custom Header Precedence
@@ -93,8 +131,9 @@ ipware = FastAPIIpWare(
 Validate that requests pass through the expected number of proxies:
 
 ```python
-# Expect exactly 1 proxy (e.g., AWS ALB)
-ipware = FastAPIIpWare(proxy_count=1)
+# Expect exactly 1 proxy (e.g., AWS ALB).
+# default_strict applies to Depends(ipware), dependency(), and IpWareMiddleware.
+ipware = FastAPIIpWare(proxy_count=1, default_strict=True)
 
 # In strict mode, must be exactly 1 proxy
 ip, trusted = ipware.get_client_ip_from_request(request, strict=True)
