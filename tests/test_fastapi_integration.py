@@ -157,9 +157,7 @@ def test_ipware_middleware_websocket() -> None:
 
 
 # Two proxies on the right of the client. proxy_count=1 is a strict mismatch.
-MISMATCHED_FORWARDED_FOR = {
-    "X-Forwarded-For": "203.0.113.10, 10.0.0.1, 10.0.0.2"
-}
+MISMATCHED_FORWARDED_FOR = {"X-Forwarded-For": "203.0.113.10, 10.0.0.1, 10.0.0.2"}
 
 
 def test_depends_honors_default_strict() -> None:
@@ -329,9 +327,7 @@ def test_depends_websocket() -> None:
     ) -> None:
         await websocket.accept()
         ip, trusted = client
-        await websocket.send_json(
-            {"ip": str(ip) if ip else None, "trusted": trusted}
-        )
+        await websocket.send_json({"ip": str(ip) if ip else None, "trusted": trusted})
         await websocket.close()
 
     @app.websocket("/ws-loose")
@@ -341,9 +337,7 @@ def test_depends_websocket() -> None:
     ) -> None:
         await websocket.accept()
         ip, trusted = client
-        await websocket.send_json(
-            {"ip": str(ip) if ip else None, "trusted": trusted}
-        )
+        await websocket.send_json({"ip": str(ip) if ip else None, "trusted": trusted})
         await websocket.close()
 
     client = TestClient(app)
@@ -351,7 +345,5 @@ def test_depends_websocket() -> None:
     with client.websocket_connect("/ws", headers=MISMATCHED_FORWARDED_FOR) as ws:
         assert ws.receive_json() == {"ip": None, "trusted": False}
 
-    with client.websocket_connect(
-        "/ws-loose", headers=MISMATCHED_FORWARDED_FOR
-    ) as ws:
+    with client.websocket_connect("/ws-loose", headers=MISMATCHED_FORWARDED_FOR) as ws:
         assert ws.receive_json() == {"ip": "10.0.0.1", "trusted": True}
