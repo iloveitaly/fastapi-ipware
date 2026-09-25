@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.2.0](https://github.com/iloveitaly/fastapi-ipware/compare/v0.1.2...v0.2.0) (2026-09-25)
+
+
+### Features
+
+* add dependency injection helpers and ASGI middleware ([960733a](https://github.com/iloveitaly/fastapi-ipware/commit/960733aa1d32128ee0e20bc7dd4dbd8a685a8b66))
+* upgrade to python-ipware v4 and expand header support ([de8d2c3](https://github.com/iloveitaly/fastapi-ipware/commit/de8d2c30d84250fe3b085d3d9f0bd492916b23ae))
+
+
+### Documentation
+
+* add developer guidelines and commands documentation ([721c3bd](https://github.com/iloveitaly/fastapi-ipware/commit/721c3bda739e5d2dd3e995a823668b0a7a6bba56))
+* remove agent coding instructions ([0c5daaf](https://github.com/iloveitaly/fastapi-ipware/commit/0c5daaf0f3def7a3b34e357694c863d41247cb33))
+* update quick start and usage examples in README ([4835f22](https://github.com/iloveitaly/fastapi-ipware/commit/4835f22cc592f30f5545b2ec956c095aca84c7a2))
+
 ## [0.1.2](https://github.com/iloveitaly/fastapi-ipware/compare/v0.1.1...v0.1.2) (2026-01-23)
 
 
