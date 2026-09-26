@@ -6,8 +6,10 @@ from starlette.datastructures import Headers
 from fastapi_ipware import FastAPIIpWare
 
 
-def create_mock_request(headers_dict, client_host: str | None = None):
-    """Helper to create a mock Request object with specified headers."""
+def create_mock_request(
+    headers_dict: dict[str, str], client_host: str | None = None
+) -> MagicMock:
+    "Helper to create a mock Request object with specified headers"
     request = MagicMock()
     request.headers = Headers(headers_dict)
     request.client = None
@@ -19,7 +21,7 @@ def create_mock_request(headers_dict, client_host: str | None = None):
 
 
 class TestBasicFunctionality:
-    """Test basic IP extraction without proxy configuration."""
+    "Test basic IP extraction without proxy configuration"
 
     def test_simple_forwarded_for(self):
         ipware = FastAPIIpWare()
@@ -73,10 +75,10 @@ class TestBasicFunctionality:
 
 
 class TestPrecedence:
-    """Test header precedence order."""
+    "Test header precedence order"
 
     def test_default_precedence(self):
-        # X-Forwarded-For should take precedence over X-Real-IP by default
+        # x-forwarded-for should take precedence over x-real-ip by default
         ipware = FastAPIIpWare()
         request = create_mock_request(
             {"X-Forwarded-For": "8.8.8.8", "X-Real-IP": "1.1.1.1"}
@@ -87,7 +89,7 @@ class TestPrecedence:
         assert ip == ipaddress.IPv4Address("8.8.8.8")
 
     def test_custom_precedence(self):
-        # Put X-Real-IP first in custom precedence
+        # put x-real-ip first in custom precedence
         ipware = FastAPIIpWare(precedence=("X-Real-IP", "X-Forwarded-For"))
         request = create_mock_request(
             {"X-Forwarded-For": "8.8.8.8", "X-Real-IP": "1.1.1.1"}
@@ -130,20 +132,21 @@ class TestPrecedence:
 
 
 class TestProxyCount:
-    """Test proxy count validation."""
+    "Test proxy count validation"
 
     def test_proxy_count_zero(self):
-        # No proxies expected, just client
+        # no proxies expected, just client
         ipware = FastAPIIpWare(proxy_count=0)
         request = create_mock_request({"X-Forwarded-For": "8.8.8.8"})
 
         ip, trusted = ipware.get_client_ip_from_request(request)
 
         assert ip == ipaddress.IPv4Address("8.8.8.8")
-        assert trusted is True  # proxy_count is set, so trusted
+        # proxy_count is set, so trusted
+        assert trusted is True
 
     def test_proxy_count_one_non_strict(self):
-        # At least 1 proxy expected
+        # at least 1 proxy expected
         ipware = FastAPIIpWare(proxy_count=1)
         request = create_mock_request({"X-Forwarded-For": "8.8.8.8, 1.1.1.1"})
 
@@ -153,7 +156,7 @@ class TestProxyCount:
         assert trusted is True
 
     def test_proxy_count_one_strict_match(self):
-        # Exactly 1 proxy expected
+        # exactly 1 proxy expected
         ipware = FastAPIIpWare(proxy_count=1)
         request = create_mock_request({"X-Forwarded-For": "8.8.8.8, 1.1.1.1"})
 
@@ -163,13 +166,13 @@ class TestProxyCount:
         assert trusted is True
 
     def test_proxy_count_strict_mismatch(self):
-        # Exactly 1 proxy expected but 2 provided
+        # exactly 1 proxy expected but 2 provided
         ipware = FastAPIIpWare(proxy_count=1)
         request = create_mock_request({"X-Forwarded-For": "8.8.8.8, 1.1.1.1, 9.9.9.9"})
 
         ip, trusted = ipware.get_client_ip_from_request(request, strict=True)
 
-        # Should not find IP because proxy count doesn't match
+        # should not find ip because proxy count doesn't match
         assert ip is None
         assert trusted is False
 
@@ -185,7 +188,7 @@ class TestProxyCount:
 
 
 class TestProxyList:
-    """Test trusted proxy list validation."""
+    "Test trusted proxy list validation"
 
     def test_proxy_list_single_trusted(self):
         ipware = FastAPIIpWare(proxy_list=["1.1.1."])
@@ -207,13 +210,12 @@ class TestProxyList:
 
     def test_proxy_list_untrusted(self):
         ipware = FastAPIIpWare(proxy_list=["1.1.1."])
-        request = create_mock_request(
-            {"X-Forwarded-For": "8.8.8.8, 9.9.9.9"}  # Wrong proxy
-        )
+        # wrong proxy
+        request = create_mock_request({"X-Forwarded-For": "8.8.8.8, 9.9.9.9"})
 
         ip, trusted = ipware.get_client_ip_from_request(request)
 
-        # Should not find IP because proxy is not trusted
+        # should not find ip because proxy is not trusted
         assert ip is None
         assert trusted is False
 
@@ -232,13 +234,13 @@ class TestProxyList:
 
         ip, trusted = ipware.get_client_ip_from_request(request, strict=True)
 
-        # Should not find IP because there's an extra proxy
+        # should not find ip because there's an extra proxy
         assert ip is None
         assert trusted is False
 
 
 class TestProxyCountAndList:
-    """Test combination of proxy count and proxy list."""
+    "Test combination of proxy count and proxy list"
 
     def test_combined_validation(self):
         ipware = FastAPIIpWare(proxy_count=1, proxy_list=["1.1.1."])
@@ -255,19 +257,18 @@ class TestProxyCountAndList:
 
         ip, trusted = ipware.get_client_ip_from_request(request, strict=True)
 
-        # Count doesn't match (expected 1, got 2)
+        # count doesn't match (expected 1, got 2)
         assert ip is None
         assert trusted is False
 
 
 class TestIPTypes:
-    """Test different IP address types (public, private, loopback)."""
+    "Test different IP address types (public, private, loopback)"
 
     def test_public_ip_preferred(self):
         ipware = FastAPIIpWare()
-        request = create_mock_request(
-            {"X-Forwarded-For": "8.8.8.8"}  # Public IP (Google DNS)
-        )
+        # public ip (google dns)
+        request = create_mock_request({"X-Forwarded-For": "8.8.8.8"})
 
         ip, _ = ipware.get_client_ip_from_request(request)
 
@@ -297,7 +298,7 @@ class TestIPTypes:
 
 
 class TestClientHostFallback:
-    """Test fallback to client host when no headers are present."""
+    "Test fallback to client host when no headers are present"
 
     def test_fallback_to_client_host_ipv4(self):
         ipware = FastAPIIpWare()
@@ -308,9 +309,9 @@ class TestClientHostFallback:
         assert ip == ipaddress.IPv4Address("198.51.100.23")
 
     def test_public_preferred_over_private(self):
-        # ipware returns first valid IP based on precedence, then filters by type
-        # It will check X-Real-IP first (private), skip it internally,
-        # then check X-Forwarded-For (public) and return it
+        # ipware returns first valid ip based on precedence, then filters by type
+        # it will check x-real-ip first (private), skip it internally
+        # then check x-forwarded-for (public) and return it
         ipware = FastAPIIpWare(precedence=("X-Real-IP", "X-Forwarded-For"))
         request = create_mock_request(
             {"X-Real-IP": "192.168.1.1", "X-Forwarded-For": "8.8.8.8"}
@@ -318,14 +319,14 @@ class TestClientHostFallback:
 
         ip, _ = ipware.get_client_ip_from_request(request)
 
-        # ipware prefers public IPs - will find public even if private has higher precedence
+        # ipware prefers public ips - will find public even if private has higher precedence
         assert ip == ipaddress.IPv4Address("8.8.8.8")
         assert ip is not None
         assert ip.is_global
 
 
 class TestIPWithPort:
-    """Test IP addresses that include port numbers."""
+    "Test IP addresses that include port numbers"
 
     def test_ipv4_with_port(self):
         ipware = FastAPIIpWare()
@@ -345,14 +346,14 @@ class TestIPWithPort:
 
 
 class TestRealWorldScenarios:
-    """Test real-world deployment scenarios."""
+    "Test real-world deployment scenarios"
 
     def test_aws_alb_scenario(self):
-        # AWS ALB typically adds X-Forwarded-For
+        # aws alb typically adds x-forwarded-for
         ipware = FastAPIIpWare(proxy_count=1, proxy_list=["10.0."])
-        request = create_mock_request(
-            {"X-Forwarded-For": "8.8.8.8, 10.0.1.1"}  # Client  # ALB internal IP
-        )
+        # client
+        # alb internal ip
+        request = create_mock_request({"X-Forwarded-For": "8.8.8.8, 10.0.1.1"})
 
         ip, trusted = ipware.get_client_ip_from_request(request)
 
@@ -360,7 +361,7 @@ class TestRealWorldScenarios:
         assert trusted is True
 
     def test_cloudflare_scenario(self):
-        # Cloudflare provides CF-Connecting-IP
+        # cloudflare provides cf-connecting-ip
         ipware = FastAPIIpWare(precedence=("CF-Connecting-IP",))
         request = create_mock_request(
             {"CF-Connecting-IP": "8.8.8.8", "X-Forwarded-For": "1.1.1.1"}
@@ -371,7 +372,7 @@ class TestRealWorldScenarios:
         assert ip == ipaddress.IPv4Address("8.8.8.8")
 
     def test_nginx_scenario(self):
-        # NGINX typically uses X-Real-IP
+        # nginx typically uses x-real-ip
         ipware = FastAPIIpWare(precedence=("X-Real-IP", "X-Forwarded-For"))
         request = create_mock_request({"X-Real-IP": "8.8.8.8"})
 
@@ -380,12 +381,13 @@ class TestRealWorldScenarios:
         assert ip == ipaddress.IPv4Address("8.8.8.8")
 
     def test_multiple_proxies_scenario(self):
-        # Client -> CDN -> Load Balancer -> Server
+        # client -> cdn -> load balancer -> server
         ipware = FastAPIIpWare(proxy_count=2, proxy_list=["10.1.", "10.2."])
+        # client
+        # cdn
+        # lb
         request = create_mock_request(
-            {
-                "X-Forwarded-For": "8.8.8.8, 10.1.1.1, 10.2.2.2"  # Client  # CDN  # LB
-            }
+            {"X-Forwarded-For": "8.8.8.8, 10.1.1.1, 10.2.2.2"}
         )
 
         ip, trusted = ipware.get_client_ip_from_request(request)
@@ -395,7 +397,7 @@ class TestRealWorldScenarios:
 
 
 class TestIpwareV4Features:
-    """Test features and compatibility introduced in python-ipware 4.x."""
+    "Test features and compatibility introduced in python-ipware 4.x"
 
     def test_rfc7239_forwarded_for_parameter(self):
         ipware = FastAPIIpWare()
@@ -414,7 +416,9 @@ class TestIpwareV4Features:
         ):
             ipware = FastAPIIpWare()
             request = create_mock_request({header_name: "198.51.100.2"})
+
             ip, _ = ipware.get_client_ip_from_request(request)
+
             assert ip == ipaddress.IPv4Address("198.51.100.2"), (
                 f"Failed for {header_name}"
             )
@@ -445,6 +449,7 @@ class TestIpwareV4Features:
             proxy_count=2,
             proxy_list=["10.0.0.0/8"],
         )
+
         assert isinstance(ipware.precedence, tuple)
         assert "CF-Connecting-IP" in ipware.precedence
         assert ipware.leftmost is False
@@ -456,19 +461,19 @@ class TestIpwareV4Features:
             precedence=("HTTP_X_REAL_IP", "CF-Connecting-IP", "X-Forwarded-For")
         )
 
-        # Natural header format
+        # natural header format
         ip1, _ = ipware.get_client_ip({"X-Forwarded-For": "8.8.8.8"})
         assert ip1 == ipaddress.IPv4Address("8.8.8.8")
 
-        # Lowercase header format
+        # lowercase header format
         ip2, _ = ipware.get_client_ip({"x-forwarded-for": "8.8.8.8"})
         assert ip2 == ipaddress.IPv4Address("8.8.8.8")
 
-        # WSGI format
+        # wsgi format
         ip3, _ = ipware.get_client_ip({"HTTP_X_FORWARDED_FOR": "8.8.8.8"})
         assert ip3 == ipaddress.IPv4Address("8.8.8.8")
 
-        # Custom precedence with HTTP_ prefix provided by user
+        # custom precedence with http_ prefix provided by user
         ip4, _ = ipware.get_client_ip(
             {"x-real-ip": "1.1.1.1", "cf-connecting-ip": "2.2.2.2"}
         )

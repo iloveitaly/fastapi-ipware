@@ -1,25 +1,26 @@
-"""Version handling for fastapi-ipware."""
+"Version handling for fastapi-ipware"
 
 import importlib.metadata
 from pathlib import Path
 
 
 def is_local_source_checkout() -> bool:
-    """Check if the code is running from a local source checkout."""
+    "Check if the code is running from a local source checkout"
     package_dir = Path(__file__).resolve().parent
-    # Since this is a flat layout (module-root = ""), repo root is the parent of the package dir
+
+    # since this is a flat layout (module-root = ""), repo root is the parent of the package dir
     repo_root = package_dir.parent
 
     return (repo_root / ".git").exists() and (repo_root / "pyproject.toml").exists()
 
 
 def get_version() -> str:
-    """Get the version string, appending .dev if running from source."""
+    "Get the version string, appending .dev if running from source"
     try:
-        # Try to get the version of the installed package
+        # try to get the version of the installed package
         version = importlib.metadata.version("fastapi-ipware")
     except importlib.metadata.PackageNotFoundError:
-        # Fallback for local development if not installed
+        # fallback for local development if not installed
         version = "0.1.0"
 
     if not is_local_source_checkout():
@@ -32,3 +33,9 @@ def get_version() -> str:
 
 
 __version__ = get_version()
+
+__all__ = [
+    "__version__",
+    "get_version",
+    "is_local_source_checkout",
+]
