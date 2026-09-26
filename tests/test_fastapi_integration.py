@@ -3,7 +3,12 @@ from typing import Annotated
 from fastapi import Depends, FastAPI, Request, WebSocket
 from fastapi.testclient import TestClient
 
-from fastapi_ipware import ClientIpResult, FastAPIIpWare, IpAddressType, IpWareMiddleware
+from fastapi_ipware import (
+    ClientIpResult,
+    FastAPIIpWare,
+    IpAddressType,
+    IpWareMiddleware,
+)
 
 
 def format_client_ip_payload(client: ClientIpResult) -> dict[str, str | bool | None]:

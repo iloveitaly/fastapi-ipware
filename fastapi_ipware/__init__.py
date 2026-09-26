@@ -254,9 +254,7 @@ class IpWareMiddleware:
             return
 
         conn = HTTPConnection(scope)
-        ip, trusted = self.ipware.get_client_ip_from_request(
-            conn, strict=self.strict
-        )
+        ip, trusted = self.ipware.get_client_ip_from_request(conn, strict=self.strict)
 
         scope.setdefault("state", {})
         scope["state"]["client_ip"] = ip
