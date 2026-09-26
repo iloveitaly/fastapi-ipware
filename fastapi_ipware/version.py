@@ -21,7 +21,7 @@ def get_version() -> str:
         version = importlib.metadata.version("fastapi-ipware")
     except importlib.metadata.PackageNotFoundError:
         # fallback for local development if not installed
-        version = "0.1.0"
+        version = "1.0.0"
 
     if not is_local_source_checkout():
         return version
@@ -33,9 +33,3 @@ def get_version() -> str:
 
 
 __version__ = get_version()
-
-__all__ = [
-    "__version__",
-    "get_version",
-    "is_local_source_checkout",
-]
