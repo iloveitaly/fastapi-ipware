@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.0](https://github.com/iloveitaly/fastapi-ipware/compare/v0.2.0...v1.0.0) (2026-10-11)
+
+
+### Documentation
+
+* clarify trusted and proxy_count in code examples ([81cb8b7](https://github.com/iloveitaly/fastapi-ipware/commit/81cb8b705e507a6a2fb0745e5617f1caf03d9fcc))
+
 ## [0.2.0](https://github.com/iloveitaly/fastapi-ipware/compare/v0.1.2...v0.2.0) (2026-09-25)
 
 
